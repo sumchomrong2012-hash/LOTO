@@ -480,6 +480,42 @@
           .tray, .move-status, .training-start-bar, .ai-mode-panel, .online-mode-panel, .timer-container, .move-controls, .board-controls, .controls-card { width:min(100%, calc(100dvh - 95px)); }
         }
 
+
+/* MOBILE LAYOUT V2: center header controls and prioritize a larger board */
+@media screen and (max-width:950px){
+ header{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;width:100%;box-sizing:border-box;padding:6px 8px;gap:6px;height:auto;max-height:none}
+ .title-area{display:none!important}
+ .header-controls{width:100%;max-width:100%;min-width:0;flex:1 1 100%;display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:5px;margin:0 auto}
+ .mode-switcher{display:flex;justify-content:center;align-items:center;flex:0 1 auto;min-width:0;max-width:calc(100% - 100px);margin:0 auto}
+ .mode-btn{display:flex;align-items:center;justify-content:center;flex:1 1 auto;min-width:0;padding:5px 7px;gap:4px;white-space:nowrap}
+ .header-controls>div:not(.mode-switcher){flex:0 0 auto}
+ .header-controls>div:not(.mode-switcher)>button{display:flex;align-items:center;justify-content:center;min-width:38px;padding:6px;gap:3px}
+ .header-controls .label-btn{display:none}
+ .main-container{width:100%;max-width:none;box-sizing:border-box}
+ .center-column{width:100%;max-width:100%;min-width:0;align-items:center}
+ .board-wrapper{width:min(calc(100vw - 24px),calc(100dvh - 180px));max-width:100%;height:auto;aspect-ratio:1/1;margin-left:auto;margin-right:auto}
+ #chess-board{width:100%;height:100%}
+ .tray,.move-status,.training-hint,.training-start-bar,.ai-mode-panel,.online-mode-panel,.timer-container,.move-controls,.board-controls,.controls-card{width:min(calc(100vw - 24px),calc(100dvh - 180px));max-width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box}
+ .panel,.side-panel{min-width:0;max-width:100%}
+}
+@media screen and (max-width:950px) and (orientation:landscape){
+ header{flex-wrap:nowrap;padding:3px 6px;gap:4px}
+ .header-controls{width:100%;flex:1 1 100%;gap:4px}
+ .mode-switcher{max-width:calc(100% - 88px)}
+ .mode-btn{padding:3px 6px;font-size:clamp(10px,2.2vh,14px)}
+ .mode-btn span{display:inline;font-size:inherit}
+ .main-container{display:flex;align-items:center;justify-content:center;padding:3px 6px;height:calc(100dvh - 42px);min-height:0;overflow-y:auto;overflow-x:hidden}
+ .center-column{width:100%;height:auto;max-height:none;flex:0 1 auto;gap:clamp(2px,.5vh,5px);overflow:visible}
+ .board-wrapper{width:min(calc(100vw - 24px),calc(100dvh - 76px));max-height:calc(100dvh - 76px)}
+ .tray,.move-status,.training-start-bar,.ai-mode-panel,.online-mode-panel,.timer-container,.move-controls,.board-controls,.controls-card{width:min(calc(100vw - 24px),calc(100dvh - 76px))}
+}
+@media screen and (max-width:600px) and (orientation:portrait){
+ .mode-btn{padding:5px;gap:3px}.mode-btn span{font-size:clamp(9px,2.8vw,12px)}
+ .header-controls{gap:3px}.mode-switcher{max-width:calc(100% - 86px)}
+ .board-wrapper{width:min(calc(100vw - 20px),calc(100dvh - 360px));min-width:0}
+ .tray,.move-status,.training-start-bar,.ai-mode-panel,.online-mode-panel,.timer-container,.move-controls,.board-controls,.controls-card{width:min(calc(100vw - 20px),calc(100dvh - 360px))}
+}
+
 </style>
 </head>
 <body>
