@@ -424,10 +424,63 @@
             .training-hint{padding:2px 8px;}
             .tray{min-height:32px;padding:2px 6px;}
         }
-    </style>
+    
 
-    <link rel="manifest" href="manifest.webmanifest">
-    <meta name="apple-mobile-web-app-title" content="Khmer Chess Pro">
+        /* PHONE LANDSCAPE: board-first responsive layout */
+        @media screen and (max-width: 950px) and (orientation: landscape) {
+          html, body { width:100%; height:100%; min-height:0; overflow:hidden; }
+          body { height:100dvh; min-height:0; display:flex; flex-direction:column; }
+          header { height:auto; min-height:38px; max-height:48px; flex:0 0 auto; padding:3px 8px; gap:6px; }
+          .title-area { max-width:26vw; }
+          .title-area h1 { font-size:clamp(11px,2.5vh,16px); }
+          .title-area p { font-size:clamp(8px,1.5vh,10px); }
+          .header-controls { flex:1 1 auto; justify-content:center; gap:4px; }
+          .header-controls > * { min-width:0; }
+          .mode-switcher { padding:2px; max-width:100%; }
+          .mode-btn { min-height:28px; padding:3px 6px; font-size:clamp(9px,1.7vh,12px); gap:3px; }
+          .header-controls button, header button { max-height:34px; }
+          .main-container {
+            width:100%; max-width:none; margin:0; padding:3px 6px 5px;
+            display:flex; flex:1 1 auto; min-height:0; height:calc(100dvh - 44px);
+            overflow:hidden; align-items:center; justify-content:center; gap:0;
+          }
+          .center-column {
+            width:min(100%, calc(100dvh - 54px)); height:100%; max-height:100%;
+            min-width:0; min-height:0; flex:0 1 auto; margin:0 auto;
+            align-items:center; justify-content:center; gap:clamp(2px,0.6vh,5px); overflow:hidden;
+          }
+          .board-wrapper {
+            width:min(100%, calc(100dvh - 110px)); height:auto; max-width:100%; max-height:min(100%, calc(100dvh - 110px));
+            aspect-ratio:1 / 1; flex:0 1 auto; min-height:0; margin:0 auto;
+          }
+          #chess-board { width:100%; height:100%; max-width:100%; max-height:100%; }
+          .tray { width:min(100%, calc(100dvh - 110px)); min-height:clamp(20px,4.2vh,30px); max-height:30px; padding:2px 5px; gap:2px; overflow:hidden; }
+          .tray .piece, .tray .chess-piece { max-height:24px; }
+          .move-status, .training-hint { width:min(100%, calc(100dvh - 110px)); max-width:100%; margin:0 auto; padding:2px 6px; font-size:clamp(8px,1.5vh,11px); line-height:1.15; overflow:hidden; }
+          .training-start-bar, .ai-mode-panel, .online-mode-panel, .timer-container, .move-controls, .board-controls, .controls-card {
+            width:min(100%, calc(100dvh - 110px)); max-width:100%; margin-left:auto; margin-right:auto;
+          }
+          .training-start-bar { padding:3px; gap:3px; border-width:1px; }
+          .btn-start-game, .btn-start-secondary, .btn { min-height:28px; padding:3px 7px; font-size:clamp(9px,1.6vh,12px); }
+          .training-hint { display:none; }
+          .panel, .side-panel { max-width:100%; }
+        }
+
+        /* Narrow landscape phones: keep the board square and controls centered */
+        @media screen and (max-width: 740px) and (orientation: landscape) {
+          header { min-height:34px; max-height:40px; padding:2px 5px; }
+          .title-area { max-width:20vw; }
+          .title-area h1 span { display:none; }
+          .header-controls { gap:2px; }
+          .mode-btn { padding:2px 4px; min-height:25px; }
+          .mode-btn span { font-size:9px; }
+          .main-container { padding:2px 3px; height:calc(100dvh - 38px); }
+          .center-column { width:min(100%, calc(100dvh - 44px)); }
+          .board-wrapper { width:min(100%, calc(100dvh - 95px)); max-height:calc(100dvh - 95px); }
+          .tray, .move-status, .training-start-bar, .ai-mode-panel, .online-mode-panel, .timer-container, .move-controls, .board-controls, .controls-card { width:min(100%, calc(100dvh - 95px)); }
+        }
+
+</style>
 </head>
 <body>
 
@@ -3275,16 +3328,5 @@ self.onmessage = function (e) {
         setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
     </script>
 <script>window.addEventListener('DOMContentLoaded',()=>{ if(window.lucide) lucide.createIcons(); });</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./service-worker.js').catch(function (err) {
-      console.warn('Offline app setup was not available:', err);
-    });
-  });
-}
-</script>
-
 </body>
 </html>
