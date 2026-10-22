@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOTO KENO — Admin</title>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="game.html">← Back to Game</a>
+  <h1>LOTO KENO — Admin</h1>
+  <div class="sub">Manage users &amp; refill balances</div>
+
+  <div class="panel">
+    <h2>💰 Refill a User</h2>
+    <label>User Email</label>
+    <input type="email" id="targetEmail" placeholder="user@example.com">
+    <label>Amount ($)</label>
+    <input type="number" id="refillAmount" value="100" min="1">
+    <button class="refill" onclick="doRefill()">REFILL</button>
+    <div class="msg" id="refillMsg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>👥 All Users</h2>
+    <button onclick="loadUsers()">🔄 Refresh</button>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Email</th><th>Balance</th><th>Role</th><th>Created</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script>
+let currentUser = null;
+
+(async function boot() {
+  const user = await requireAuth();
+  if (!user) return;
+  currentUser = user;
+
+  const profile = await getProfile(user.id);
+  if (!profile || profile.role !== 'admin') {
+    alert('Access denied. Admin only.');
+    window.location.href = 'game.html';
+    return;
+  }
+
+  loadUsers();
+})();
+
+async function loadUsers() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--loss)">${error.message}</td></tr>`;
+    return;
+  }
+
+  data.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.email || '—'}</td>
+      <td>$${Number(p.balance).toFixed(2)}</td>
+      <td class="role-${p.role}">${p.role.toUpperCase()}</td>
+      <td>${new Date(p.created_at).toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function doRefill() {
+  const email = document.getElementById('targetEmail').value.trim();
+  const amount = parseFloat(document.getElementById('refillAmount').value);
+  const msg = document.getElementById('refillMsg');
+
+  if (!email || !amount || amount <= 0) {
+    msg.textContent = 'Enter a valid email and amount.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const { data, error } = await supabase.rpc('admin_refill', {
+    p_email: email,
+    p_amount: amount
+  });
+
+  if (error) {
+    msg.textContent = 'Error: ' + error.message;
+    msg.className = 'msg err';
+  } else {
+    msg.textContent = `Refilled ${data.email} → new balance $${Number(data.new_balance).toFixed(2)}`;
+    msg.className = 'msg ok';
+    loadUsers();
+  }
+}
+</script>
+</body>
+</html>

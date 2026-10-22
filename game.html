@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOTO KENO - Header Sum Ball</title>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+<div id="game-container">
+  <div id="big-ball-object"><span>SUM</span><b>0</b></div>
+
+  <header>
+    <div class="logo-area">
+      <div style="font-weight:900; color:var(--accent); font-size:1.6rem; letter-spacing:1px;">LOTO KENO</div>
+    </div>
+    <div style="display:flex; align-items:center;">
+      <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">ADMIN</a>
+      <span class="user-badge" id="userEmail">—</span>
+      <span style="font-size:1.4rem; font-weight:bold; margin-right:16px;">
+        BALANCE: <span id="balance" style="color:var(--win)">$0.00</span>
+      </span>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <div id="number-grid"></div>
+
+  <div class="sidebar">
+    <div class="history-label">RANGE HISTORY</div>
+    <div class="history-box" id="num-hist" style="height:120px;"></div>
+    <div class="history-label">U/O HISTORY</div>
+    <div class="history-box" id="ou-hist" style="height:120px;"></div>
+    <div id="trans-log"></div>
+  </div>
+
+  <div id="draw-row"></div>
+
+  <div class="controls">
+    <div class="big-rank-container">
+      <div class="rank-card" id="card-1"><span>RANK 1</span><small>210 - 695</small></div>
+      <div class="rank-card" id="card-2"><span>RANK 2</span><small>696 - 763</small></div>
+      <div class="rank-card" id="card-3"><span>RANK 3</span><small>764 - 855</small></div>
+      <div class="rank-card" id="card-4"><span>RANK 4</span><small>856 - 923</small></div>
+      <div class="rank-card" id="card-5"><span>RANK 5</span><small>924 - 1410</small></div>
+    </div>
+    <div class="binary-rank-container">
+      <div class="bin-card" id="card-U">UNDER: 210 - 810</div>
+      <div class="bin-card" id="card-O">OVER: 811 - 1410</div>
+    </div>
+
+    <div class="control-layout">
+      <div class="stake-box">
+        <input type="number" id="bet-val" value="10" min="1">
+        <button id="add-bet-btn" onclick="addBetToQueue()">CONFIRM</button>
+        <button onclick="cancelLastTicket()" style="margin-top:5px; background:none; border:1px solid #444; color:#999; cursor:pointer; font-size:10px; padding:5px;">UNDO</button>
+      </div>
+      <div class="betting-section">
+        <div class="btn-row">
+          <button class="b-opt" id="btn-1" data-v="1"><span>1</span><b>x9.20</b></button>
+          <button class="b-opt" id="btn-2" data-v="2"><span>2</span><b>x4.60</b></button>
+          <button class="b-opt" id="btn-3" data-v="3"><span>3</span><b>x2.30</b></button>
+          <button class="b-opt" id="btn-4" data-v="4"><span>4</span><b>x4.60</b></button>
+          <button class="b-opt" id="btn-5" data-v="5"><span>5</span><b>x9.20</b></button>
+        </div>
+        <div class="btn-row">
+          <button class="b-opt" id="btn-ODD" data-v="ODD"><span>ODD</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-EVEN" data-v="EVEN"><span>EVEN</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-UNDER" data-v="UNDER"><span>UNDER</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-OVER" data-v="OVER"><span>OVER</span><b>x1.95</b></button>
+        </div>
+      </div>
+      <button id="start-btn" onclick="startGame()">DRAW</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
