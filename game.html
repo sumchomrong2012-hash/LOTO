@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOTO KENO - Header Sum Ball</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --accent: #58a6ff; --win: #238636; --loss: #da3633;
+    --text: #c9d1d9;
+    --neon-u: #ff3131; --neon-o: #00d2ff; --neon-n: #39ff14;
+  }
+  body { background-color:#000; color:var(--text); font-family:'Segoe UI',sans-serif; margin:0; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; }
+  #game-container {
+    width:1200px; height:850px; background:var(--bg); border:2px solid var(--border);
+    display:grid;
+    grid-template-areas: "header header" "grid sidebar" "draw sidebar" "controls controls";
+    grid-template-columns: 550px 1fr; grid-template-rows: 70px 1fr 120px 280px;
+    gap:12px; padding:15px; box-sizing:border-box; position:relative;
+  }
+  #big-ball-object {
+    position:absolute; width:65px; height:65px;
+    background:radial-gradient(circle at 30% 30%, #fff, var(--accent));
+    border-radius:50%; box-shadow:0 0 25px var(--accent);
+    display:flex; z-index:1000; pointer-events:none;
+    color:#000; font-weight:900; align-items:center; justify-content:center;
+    flex-direction:column; line-height:1; border:3px solid #fff;
+    transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    top:18px; left:180px;
+  }
+  #big-ball-object b { font-size:26px; }
+  #big-ball-object span { font-size:10px; }
+
+  header {
+    grid-area:header; display:flex; justify-content:space-between; align-items:center;
+    padding:0 20px; background:var(--panel); border-radius:8px; position:relative;
+  }
+  .logo-area { display:flex; align-items:center; gap:80px; }
+
+  #number-grid { grid-area:grid; display:grid; grid-template-columns:repeat(10,1fr); gap:4px; background:rgba(0,0,0,0.4); padding:10px; border-radius:12px; align-content:center; }
+  .cell { width:34px; height:34px; margin:auto; display:flex; align-items:center; justify-content:center; background:#21262d; font-size:13px; font-weight:bold; border-radius:50%; color:#8b949e; }
+  .cell.hit { background:var(--accent); color:white; box-shadow:0 0 8px var(--accent); transform:scale(1.1); transition:0.2s; }
+
+  .sidebar { grid-area:sidebar; display:flex; flex-direction:column; gap:10px; overflow:hidden; border-left:1px solid var(--border); padding-left:15px; }
+
+  .big-rank-container { display:flex; gap:10px; margin-bottom:12px; height:50px; }
+  .rank-card { flex:1; background:#000; border:2px solid var(--border); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:900; }
+  .rank-card span { font-size:18px; color:#fff; }
+  .rank-card small { font-size:10px; color:#8b949e; }
+  .rank-card.active { border-color:var(--neon-n); box-shadow:0 0 15px var(--neon-n); background:#0a200a; }
+
+  .binary-rank-container { display:flex; gap:10px; margin-bottom:10px; }
+  .bin-card { flex:1; padding:8px; border-radius:8px; text-align:center; font-weight:900; border:2px solid var(--border); }
+  .bin-card.active-u { border-color:var(--neon-u); box-shadow:0 0 15px var(--neon-u); color:var(--neon-u); }
+  .bin-card.active-o { border-color:var(--neon-o); box-shadow:0 0 15px var(--neon-o); color:var(--neon-o); }
+
+  .history-box { flex:1; display:flex; flex-direction:row; justify-content:flex-end; align-items:flex-start; background:#000; border:1px solid var(--border); padding:10px; overflow-x:hidden; gap:6px; border-radius:8px; }
+  .hist-col { display:flex; flex-direction:column; gap:4px; min-width:28px; }
+  .hist-dot { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; background:#111; border:2px solid transparent; flex-shrink:0; }
+  .dot-u { color:var(--neon-u); border-color:var(--neon-u); }
+  .dot-o { color:var(--neon-o); border-color:var(--neon-o); }
+  .dot-n { color:var(--neon-n); border-color:var(--neon-n); }
+
+  #trans-log { flex:1; background:#000; border:1px solid var(--border); border-radius:8px; padding:12px; font-size:14px; overflow-y:auto; font-family:'Courier New',monospace; }
+  #draw-row { grid-area:draw; background:#000; border:1px solid var(--border); display:grid; grid-template-columns:repeat(10,1fr); gap:5px; padding:8px; border-radius:12px; }
+  .draw-ball { width:30px; height:30px; background:#fff; border-radius:50%; color:#000; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; }
+
+  .controls { grid-area:controls; background:var(--panel); display:flex; flex-direction:column; padding:15px; border-radius:12px; }
+  .control-layout { display:flex; gap:20px; align-items:stretch; }
+  .stake-box { display:flex; flex-direction:column; gap:4px; min-width:100px; }
+  #bet-val { width:100%; height:40px; background:#000; color:#fff; border:1px solid var(--border); border-radius:4px; text-align:center; font-weight:900; font-size:20px; }
+  #add-bet-btn { background:#1f6feb; color:white; border:none; height:35px; border-radius:4px; font-weight:bold; cursor:pointer; }
+
+  .betting-section { display:flex; flex-direction:column; gap:8px; flex-grow:1; }
+  .btn-row { display:flex; gap:8px; }
+  .b-opt { flex:1; padding:12px 2px; background:#21262d; border:1px solid var(--border); color:#8b949e; cursor:pointer; border-radius:10px; font-weight:bold; display:flex; flex-direction:column; align-items:center; }
+  .b-opt span { font-size:18px; color:#fff; }
+  .b-opt.selected { background:var(--accent); color:#fff; border-color:#fff; transform:scale(0.95); }
+  .b-opt.live-win { background:var(--win) !important; border-color:#fff; color:#fff; }
+
+  #start-btn { background:var(--win); color:white; border:none; padding:0 40px; border-radius:6px; font-weight:900; cursor:pointer; font-size:1.5rem; flex-grow:1; }
+  #start-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  .user-badge { font-size:13px; color:#8b949e; margin-right:12px; }
+  .logout-btn { background:#21262d; color:#fff; border:1px solid var(--border); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; }
+  .admin-link { color:var(--neon-n); font-size:12px; text-decoration:none; margin-right:12px; }
+  .admin-link:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="big-ball-object"><span>SUM</span><b>0</b></div>
+
+  <header>
+    <div class="logo-area">
+      <div style="font-weight:900; color:var(--accent); font-size:1.6rem; letter-spacing:1px;">LOTO KENO</div>
+    </div>
+    <div style="display:flex; align-items:center;">
+      <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">ADMIN</a>
+      <span class="user-badge" id="userEmail">—</span>
+      <span style="font-size:1.4rem; font-weight:bold; margin-right:16px;">BALANCE: <span id="balance" style="color:var(--win)">$0.00</span></span>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <div id="number-grid"></div>
+
+  <div class="sidebar">
+    <div class="history-label">RANGE HISTORY</div>
+    <div class="history-box" id="num-hist" style="height:120px;"></div>
+    <div class="history-label">U/O HISTORY</div>
+    <div class="history-box" id="ou-hist" style="height:120px;"></div>
+    <div id="trans-log"></div>
+  </div>
+
+  <div id="draw-row"></div>
+
+  <div class="controls">
+    <div class="big-rank-container">
+      <div class="rank-card" id="card-1"><span>RANK 1</span><small>210 - 695</small></div>
+      <div class="rank-card" id="card-2"><span>RANK 2</span><small>696 - 763</small></div>
+      <div class="rank-card" id="card-3"><span>RANK 3</span><small>764 - 855</small></div>
+      <div class="rank-card" id="card-4"><span>RANK 4</span><small>856 - 923</small></div>
+      <div class="rank-card" id="card-5"><span>RANK 5</span><small>924 - 1410</small></div>
+    </div>
+    <div class="binary-rank-container">
+      <div class="bin-card" id="card-U">UNDER: 210 - 810</div>
+      <div class="bin-card" id="card-O">OVER: 811 - 1410</div>
+    </div>
+
+    <div class="control-layout">
+      <div class="stake-box">
+        <input type="number" id="bet-val" value="10" min="1">
+        <button id="add-bet-btn" onclick="addBetToQueue()">CONFIRM</button>
+        <button onclick="cancelLastTicket()" style="margin-top:5px; background:none; border:1px solid #444; color:#999; cursor:pointer; font-size:10px; padding:5px;">UNDO</button>
+      </div>
+      <div class="betting-section">
+        <div class="btn-row">
+          <button class="b-opt" id="btn-1" data-v="1"><span>1</span><b>x9.20</b></button>
+          <button class="b-opt" id="btn-2" data-v="2"><span>2</span><b>x4.60</b></button>
+          <button class="b-opt" id="btn-3" data-v="3"><span>3</span><b>x2.30</b></button>
+          <button class="b-opt" id="btn-4" data-v="4"><span>4</span><b>x4.60</b></button>
+          <button class="b-opt" id="btn-5" data-v="5"><span>5</span><b>x9.20</b></button>
+        </div>
+        <div class="btn-row">
+          <button class="b-opt" id="btn-ODD" data-v="ODD"><span>ODD</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-EVEN" data-v="EVEN"><span>EVEN</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-UNDER" data-v="UNDER"><span>UNDER</span><b>x1.95</b></button>
+          <button class="b-opt" id="btn-OVER" data-v="OVER"><span>OVER</span><b>x1.95</b></button>
+        </div>
+      </div>
+      <button id="start-btn" onclick="startGame()">DRAW</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script>
+/* ==========================================
+   STATE
+========================================== */
+let currentUser = null;
+let balance = 0;
+let isAdmin = false;
+let selectedBets = new Set();
+let queuedTransactions = [];  // Array of { bets:[...], per: n }
+let isDrawing = false;
+let historyData = { num: [], ou: [] };
+const MAX_COL = 18;
+
+const $ = id => document.getElementById(id);
+const grid = $('number-grid');
+
+for (let i = 1; i <= 80; i++) {
+  const d = document.createElement('div');
+  d.className = 'cell'; d.id = `cell-${i}`; d.textContent = i;
+  grid.appendChild(d);
+}
+
+/* ==========================================
+   BOOT
+========================================== */
+(async function boot() {
+  const user = await requireAuth();
+  if (!user) return;
+  currentUser = user;
+
+  const profile = await getProfile(user.id);
+  if (!profile) { alert('Profile missing. Contact admin.'); return; }
+
+  balance = Number(profile.balance);
+  isAdmin = profile.role === 'admin';
+  $('userEmail').textContent = profile.email;
+  if (isAdmin) $('adminLink').style.display = 'inline';
+  updateUI();
+})();
+
+/* ==========================================
+   BET SELECTION
+========================================== */
+document.querySelectorAll('.b-opt').forEach(btn => {
+  btn.onclick = () => {
+    if (isDrawing) return;
+    const val = btn.dataset.v;
+    if (selectedBets.has(val)) {
+      selectedBets.delete(val);
+      btn.classList.remove('selected');
+    } else {
+      selectedBets.add(val);
+      btn.classList.add('selected');
+    }
+  };
+});
+
+/* ==========================================
+   CONFIRM BET (queue ticket)
+========================================== */
+function addBetToQueue() {
+  if (isDrawing) return;
+  const perBet = parseFloat($('bet-val').value);
+  if (!perBet || perBet <= 0) return;
+  if (selectedBets.size === 0) return;
+
+  // Check queued total against current balance (simple client check)
+  const queuedTotal = queuedTransactions.reduce((s, t) => s + t.per * t.bets.length, 0);
+  const thisTotal = perBet * selectedBets.size;
+  if (queuedTotal + thisTotal > balance) {
+    log('ERROR', 'Insufficient balance', 'var(--loss)');
+    return;
+  }
+
+  queuedTransactions.push({ bets: Array.from(selectedBets), per: perBet });
+  log('TICKET', `-$${thisTotal.toFixed(2)} (queued)`, 'var(--accent)');
+
+  selectedBets.clear();
+  document.querySelectorAll('.b-opt').forEach(b => b.classList.remove('selected'));
+}
+
+function cancelLastTicket() {
+  if (isDrawing || queuedTransactions.length === 0) return;
+  const t = queuedTransactions.pop();
+  const total = t.per * t.bets.length;
+  log('CANCEL', `+$${total.toFixed(2)}`, 'var(--loss)');
+}
+
+/* ==========================================
+   DRAW
+========================================== */
+async function startGame() {
+  if (queuedTransactions.length === 0) return;
+  isDrawing = true; updateUI();
+
+  const sumBall = $('big-ball-object'), bigBallText = sumBall.querySelector('b');
+  const drawDisplay = $('draw-row');
+  const containerRect = $('game-container').getBoundingClientRect();
+  drawDisplay.innerHTML = ''; bigBallText.textContent = '0';
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('hit'));
+
+  let drawn = [], sum = 0;
+
+  for (let i = 0; i < 20; i++) {
+    let n;
+    do { n = Math.floor(Math.random() * 80) + 1; } while (drawn.includes(n));
+    drawn.push(n); sum += n;
+
+    const targetCell = $(`cell-${n}`);
+    const cellRect = targetCell.getBoundingClientRect();
+    sumBall.style.left = (cellRect.left - containerRect.left - 15) + 'px';
+    sumBall.style.top  = (cellRect.top  - containerRect.top  - 15) + 'px';
+
+    await new Promise(r => setTimeout(r, 250));
+    targetCell.classList.add('hit');
+    bigBallText.textContent = sum;
+
+    const b = document.createElement('div');
+    b.className = 'draw-ball'; b.textContent = n; drawDisplay.appendChild(b);
+    updateLiveHighlights(sum);
+  }
+
+  // Return ball
+  sumBall.style.top = '18px';
+  sumBall.style.left = '180px';
+
+  await new Promise(r => setTimeout(r, 500));
+
+  /* ---------- SETTLE ---------- */
+  const resN = getResRange(sum);
+  const resOU = sum <= 810 ? 'U' : 'O';
+
+  // Compute total bet and total win
+  let totalBet = 0, totalWin = 0;
+  queuedTransactions.forEach(t => {
+    t.bets.forEach(bet => {
+      totalBet += t.per;
+      if (bet === resN) {
+        if (bet === '1' || bet === '5') totalWin += t.per * 9.20;
+        else if (bet === '2' || bet === '4') totalWin += t.per * 4.60;
+        else if (bet === '3') totalWin += t.per * 2.30;
+      }
+      const binaryRes = sum <= 810 ? 'UNDER' : 'OVER';
+      const oeRes = sum % 2 === 0 ? 'EVEN' : 'ODD';
+      if (bet === binaryRes || bet === oeRes) totalWin += t.per * 1.95;
+    });
+  });
+
+  // Call secure RPC
+  const { data, error } = await supabase.rpc('place_bet_and_resolve', {
+    p_sum: sum,
+    p_range: resN || '',
+    p_bet_amount: totalBet,
+    p_win_amount: totalWin
+  });
+
+  if (error) {
+    log('ERROR', error.message, 'var(--loss)');
+  } else {
+    balance = Number(data.balance);
+    log('SETTLE', `bet $${totalBet.toFixed(2)} | win $${totalWin.toFixed(2)}`, totalWin > 0 ? 'var(--win)' : '#8b949e');
+  }
+
+  updateHistory('num-hist', 'num', resN || '?', 'dot-n');
+  updateHistory('ou-hist',  'ou',  resOU, resOU === 'U' ? 'dot-u' : 'dot-o');
+
+  queuedTransactions = [];
+  isDrawing = false;
+  updateUI();
+}
+
+/* ==========================================
+   HELPERS
+========================================== */
+function updateLiveHighlights(sum) {
+  document.querySelectorAll('.b-opt').forEach(btn => btn.classList.remove('live-win'));
+  const nRange = getResRange(sum);
+  if (nRange) $(`btn-${nRange}`).classList.add('live-win');
+  $(`btn-${sum % 2 === 0 ? 'EVEN' : 'ODD'}`).classList.add('live-win');
+  $(`btn-${sum <= 810 ? 'UNDER' : 'OVER'}`).classList.add('live-win');
+
+  document.querySelectorAll('.rank-card').forEach(c => c.classList.remove('active'));
+  if (nRange) $(`card-${nRange}`).classList.add('active');
+
+  const cardU = $('card-U'), cardO = $('card-O');
+  cardU.classList.remove('active-u'); cardO.classList.remove('active-o');
+  if (sum <= 810) cardU.classList.add('active-u'); else cardO.classList.add('active-o');
+}
+
+function getResRange(s) {
+  if (s >= 210 && s <= 695) return '1';
+  if (s >= 696 && s <= 763) return '2';
+  if (s >= 764 && s <= 855) return '3';
+  if (s >= 856 && s <= 923) return '4';
+  if (s >= 924 && s <= 1410) return '5';
+  return null;
+}
+
+function updateHistory(elementId, dataKey, val, cssClass) {
+  const data = historyData[dataKey];
+  if (data.length > 0 && data[data.length - 1][0] === val) data[data.length - 1].push(val);
+  else data.push([val]);
+  if (data.length > MAX_COL) data.shift();
+
+  const container = $(elementId);
+  container.innerHTML = '';
+  data.forEach(column => {
+    const colDiv = document.createElement('div');
+    colDiv.className = 'hist-col';
+    column.forEach(v => {
+      const dot = document.createElement('div');
+      dot.className = `hist-dot ${cssClass}`;
+      dot.textContent = v;
+      colDiv.appendChild(dot);
+    });
+    container.appendChild(colDiv);
+  });
+}
+
+function log(title, amount, color) {
+  const l = $('trans-log');
+  const e = document.createElement('div');
+  e.style.color = color;
+  e.style.marginBottom = '5px';
+  e.style.borderBottom = '1px solid #222';
+  e.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${title}</b><span>${amount}</span></div>`;
+  l.prepend(e);
+}
+
+function updateUI() {
+  $('balance').textContent = `$${balance.toFixed(2)}`;
+  $('start-btn').disabled = isDrawing;
+}
+</script>
+</body>
+</html>
