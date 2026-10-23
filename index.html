@@ -106,6 +106,51 @@ header{grid-area:header;display:flex;justify-content:space-between;align-items:c
 #rAmt{font-size:46px;font-weight:900;margin-top:6px;color:#fff}#rSub{font-size:18px;color:#c9d1d9;margin-top:10px}
 .conf{position:absolute;top:-40px;font-size:28px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(950px) rotate(540deg)}}
+
+/* ---- history colours per rank (range history now looks/groups like U/O) ---- */
+.dot-r1{color:#ff3131;border-color:#ff3131}.dot-r2{color:#ffa500;border-color:#ffa500}.dot-r3{color:#39ff14;border-color:#39ff14}
+.dot-r4{color:#00d2ff;border-color:#00d2ff}.dot-r5{color:#c77dff;border-color:#c77dff}
+.history-box{overflow:hidden}
+.logo-area{gap:0}.logo-text{font-weight:900;color:var(--accent);font-size:1.6rem;letter-spacing:1px}
+#ball-home{width:71px;height:1px;margin-left:6px;flex-shrink:0}
+.balbox{font-size:1.4rem;font-weight:bold}
+
+/* ---- PHONE / PORTRAIT layout (class "portrait" is set by JS) ---- */
+.portrait #stage{display:block;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.portrait #scaler{width:100%;transform:none!important}
+.portrait #game-container{width:100%;height:auto;border:0;border-radius:0;padding:8px;gap:8px;
+  grid-template-areas:"header" "grid" "draw" "controls" "sidebar";grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+.portrait #big-ball-object{width:44px;height:44px;border-width:2px}
+.portrait #big-ball-object b{font-size:17px}.portrait #big-ball-object span{font-size:8px}
+.portrait header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 10px;justify-content:flex-start}
+.portrait .hright{display:contents}
+.portrait .logo-area{order:1}.portrait .logo-text{font-size:1.15rem}.portrait #ball-home{width:46px}
+.portrait .balbox{order:2;margin-left:auto;font-size:1.05rem}
+.portrait #who{order:3;flex:1;max-width:none;min-width:0}
+.portrait .hbtn{order:4}
+.portrait #number-grid{gap:3px;padding:6px}
+.portrait .cell{width:100%;height:auto;aspect-ratio:1/1;max-width:38px;font-size:clamp(9px,2.9vw,13px)}
+.portrait #draw-row{gap:3px;padding:6px;min-height:80px;align-content:start}
+.portrait .draw-ball{width:100%;height:auto;aspect-ratio:1/1;max-width:30px;font-size:clamp(9px,2.9vw,13px)}
+.portrait .controls{padding:10px}
+.portrait .big-rank-container{gap:4px;height:46px;margin-bottom:8px}
+.portrait .rank-card span{font-size:clamp(10px,3.2vw,14px)}.portrait .rank-card small{font-size:clamp(7px,2.3vw,10px)}
+.portrait .binary-rank-container{gap:6px;margin-bottom:8px}
+.portrait .bin-card{font-size:clamp(10px,3.2vw,14px);padding:6px 2px}
+.portrait .control-layout{flex-direction:column;gap:10px}
+.portrait .stake-box{flex-direction:row;gap:6px;min-width:0}
+.portrait #bet-val{flex:1.2;min-width:0;height:42px}
+.portrait #add-bet-btn{flex:1;height:42px}
+.portrait #undo-btn{margin-top:0!important;padding:0 14px!important;font-size:12px!important}
+.portrait .btn-row{gap:4px}
+.portrait .b-opt{padding:8px 1px;min-width:0}
+.portrait .b-opt span{font-size:clamp(11px,3.6vw,16px)}.portrait .b-opt b{font-size:clamp(9px,2.8vw,12px)}
+.portrait #start-btn{padding:14px;font-size:1.3rem;flex-grow:0}
+.portrait .sidebar{border-left:0;padding-left:0;overflow:visible;gap:6px}
+.portrait .history-box{height:110px!important;flex:none}
+.portrait #trans-log{flex:none;height:300px;font-size:13px}
+.portrait #result{position:fixed}
+.portrait #rTitle{font-size:14vw;letter-spacing:2px}.portrait #rAmt{font-size:8vw}.portrait #rSub{font-size:3.6vw}
 </style>
 </head>
 <body>
@@ -157,14 +202,15 @@ header{grid-area:header;display:flex;justify-content:space-between;align-items:c
 
     <header>
         <div class="logo-area">
-            <div style="font-weight:900;color:var(--accent);font-size:1.6rem;letter-spacing:1px;">LOTO KENO</div>
+            <div class="logo-text">LOTO KENO</div>
+            <div id="ball-home"></div>
         </div>
         <div class="hright">
             <span id="who">—</span>
             <button class="hbtn hidden" id="adminBtn">ADMIN</button>
             <button class="hbtn" id="muteBtn" title="Sound on/off">🔊</button>
             <button class="hbtn" id="logoutBtn">LOGOUT</button>
-            <div style="font-size:1.4rem;font-weight:bold;">BALANCE: <span id="balance">$0.00</span></div>
+            <div class="balbox">BALANCE: <span id="balance">$0.00</span></div>
         </div>
     </header>
 
@@ -324,7 +370,23 @@ function start() {
   const container = $('game-container'), sumBall = $('big-ball-object'), bigBallText = sumBall.querySelector('b');
 
   /* ---------- scaling: keeps the 1200x850 layout, fits any screen ---------- */
-  function fit() { const s = Math.min(window.innerWidth / 1230, window.innerHeight / 880, 1.3); $('scaler').style.transform = 'scale(' + s + ')'; }
+  function fit() {
+    const portrait = window.innerWidth < 900 && window.innerHeight >= window.innerWidth;
+    document.body.classList.toggle('portrait', portrait);
+    $('scaler').style.transform = portrait ? 'none' : 'scale(' + Math.min(window.innerWidth / 1230, window.innerHeight / 880, 1.3) + ')';
+    if (!isDrawing) parkBall(true);
+    if (me) renderAllHist();
+  }
+  // the sum ball "lives" next to the logo; its home is measured, so it works in any layout
+  function parkBall(instant) {
+    if ($('stage').classList.contains('hidden')) return;
+    const hr = $('ball-home').getBoundingClientRect(), rect = container.getBoundingClientRect();
+    const sc = rect.width / container.offsetWidth || 1;
+    if (instant) sumBall.style.transition = 'none';
+    sumBall.style.left = ((hr.left - rect.left) / sc + hr.width / 2 - 2 - sumBall.offsetWidth / 2) + 'px';
+    sumBall.style.top = ((hr.top - rect.top) / sc + hr.height / 2 - 2 - sumBall.offsetHeight / 2) + 'px';
+    if (instant) { void sumBall.offsetWidth; sumBall.style.transition = ''; }
+  }
   window.addEventListener('resize', fit); fit();
 
   /* ---------- views ---------- */
@@ -441,14 +503,24 @@ function start() {
     };
   });
 
-  function log(title, amount, color) {
-    const l = $('trans-log'), e = document.createElement('div');
-    e.style.color = color; e.style.marginBottom = '5px'; e.style.borderBottom = '1px solid #222';
-    const row = document.createElement('div'); row.style.cssText = 'display:flex;justify-content:space-between;';
+  const label = v => /^\d$/.test(v) ? 'RANK ' + v : v;
+  function logEl(title, amount, color, lines) {
+    const e = document.createElement('div');
+    e.style.cssText = 'margin-bottom:5px;border-bottom:1px solid #222;color:' + color;
+    const row = document.createElement('div'); row.style.cssText = 'display:flex;justify-content:space-between;gap:8px;';
     const b = document.createElement('b'); b.textContent = title; const s = document.createElement('span'); s.textContent = amount;
-    row.appendChild(b); row.appendChild(s); e.appendChild(row); l.prepend(e);
+    row.appendChild(b); row.appendChild(s); e.appendChild(row);
+    (lines || []).forEach(l => {
+      const d = document.createElement('div'); d.style.cssText = 'display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:1px 0 2px 10px;color:' + (l.color || '#8b949e');
+      const a = document.createElement('span'); a.textContent = l.text; const c = document.createElement('span'); c.textContent = l.amt || '';
+      d.appendChild(a); d.appendChild(c); e.appendChild(d);
+    });
+    return e;
   }
+  function log(title, amount, color, lines) { const l = $('trans-log'); l.prepend(logEl(title, amount, color, lines)); l.scrollTop = 0; }
+  const sgn = n => (n > 0 ? '+' : n < 0 ? '-' : '') + money(Math.abs(n));
 
+  let ticketSeq = 0;
   $('add-bet-btn').onclick = () => {
     if (isDrawing) return;
     const per = Math.round(parseFloat($('bet-val').value) * 100) / 100;
@@ -456,14 +528,19 @@ function start() {
     if (!(per >= 1)) return log('MIN STAKE IS 1', '', 'var(--loss)');
     const total = per * selectedBets.size;
     if (total > me.balance - queuedTotal()) return log('NOT ENOUGH BALANCE', '', 'var(--loss)');
-    queued.push({ id: Math.floor(1000 + Math.random() * 8999), bets: Array.from(selectedBets), per, total });
-    log('TICKET', '-$' + total.toFixed(2), 'var(--accent)');
+    const t = { id: ++ticketSeq, bets: Array.from(selectedBets), per, total };
+    queued.push(t);
+    log('BET #' + t.id, '-' + money(total), 'var(--accent)',
+      t.bets.map(b => ({ text: label(b) + ' (x' + MULT[b].toFixed(2) + ')', amt: money(per), color: '#9ecbff' })));
     selectedBets.clear(); document.querySelectorAll('.b-opt').forEach(b => b.classList.remove('selected'));
     Snd.click(); updateUI();
   };
   $('undo-btn').onclick = () => {
     if (isDrawing || queued.length === 0) return;
-    const t = queued.pop(); updateUI(); log('CANCEL', '+$' + t.total.toFixed(2), 'var(--loss)'); Snd.click();
+    const t = queued.pop(); updateUI();
+    log('CANCEL BET #' + t.id, '+' + money(t.total), '#ffa657',
+      t.bets.map(b => ({ text: label(b) + ' refunded', amt: '+' + money(t.per), color: '#ffa657' })));
+    Snd.click();
   };
 
   function getResRange(s) {
@@ -488,23 +565,31 @@ function start() {
     $('card-U').classList.remove('active-u'); $('card-O').classList.remove('active-o');
   }
 
-  function pushHist(arr, v) { if (arr.length && arr[arr.length - 1][0] === v) arr[arr.length - 1].push(v); else arr.push([v]); if (arr.length > MAX_COL) arr.shift(); }
-  function renderHist(id, data, cls) {
-    const c = $(id); c.innerHTML = '';
-    data.forEach(col => {
+  const HROWS = 3; // dots per column (fits the 120px box); longer runs continue in the next column
+  function buildCols(seq) {
+    const cols = [];
+    for (const v of seq) { const last = cols[cols.length - 1]; if (last && last[0] === v && last.length < HROWS) last.push(v); else cols.push([v]); }
+    return cols;
+  }
+  function renderHist(id, seq, cls) {
+    const c = $(id), cap = Math.max(4, Math.floor(((c.clientWidth || 600) - 20 + 6) / 34));
+    c.innerHTML = '';
+    buildCols(seq).slice(-cap).forEach(col => {
       const cd = document.createElement('div'); cd.className = 'hist-col';
       col.forEach(v => { const d = document.createElement('div'); d.className = 'hist-dot ' + cls(v); d.textContent = v; cd.appendChild(d); });
       c.appendChild(cd);
     });
   }
-  function addHistory(total) {
-    pushHist(historyData.num, getResRange(total) || '?'); pushHist(historyData.ou, total <= 810 ? 'U' : 'O');
-    renderHist('num-hist', historyData.num, () => 'dot-n'); renderHist('ou-hist', historyData.ou, v => v === 'U' ? 'dot-u' : 'dot-o');
+  const rangeCls = v => v === '?' ? 'dot-n' : 'dot-r' + v, ouCls = v => v === 'U' ? 'dot-u' : 'dot-o';
+  function renderAllHist() { renderHist('num-hist', historyData.num, rangeCls); renderHist('ou-hist', historyData.ou, ouCls); }
+  function pushHist(total) {
+    historyData.num.push(getResRange(total) || '?'); historyData.ou.push(total <= 810 ? 'U' : 'O');
+    if (historyData.num.length > 400) { historyData.num.shift(); historyData.ou.shift(); }
   }
+  function addHistory(total) { pushHist(total); renderAllHist(); }
   async function loadHistory() {
-    const r = await sb.from('draws').select('total').order('id', { ascending: false }).limit(80);
-    if (r.data && r.data.length) { r.data.reverse().forEach(d => { pushHist(historyData.num, getResRange(d.total) || '?'); pushHist(historyData.ou, d.total <= 810 ? 'U' : 'O'); });
-      renderHist('num-hist', historyData.num, () => 'dot-n'); renderHist('ou-hist', historyData.ou, v => v === 'U' ? 'dot-u' : 'dot-o'); }
+    const r = await sb.from('draws').select('total').order('id', { ascending: false }).limit(150);
+    if (r.data && r.data.length) { r.data.reverse().forEach(d => pushHist(d.total)); renderAllHist(); }
   }
 
   /* ---------- win / loss event ---------- */
@@ -532,6 +617,7 @@ function start() {
   $('start-btn').onclick = async () => {
     if (queued.length === 0 || isDrawing) return;
     isDrawing = true; updateUI(); Snd.init(); hideResult();
+    try { $('stage').scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
     const drawDisplay = $('draw-row');
     drawDisplay.innerHTML = ''; bigBallText.textContent = '0'; clearLive();
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('hit'));
@@ -556,17 +642,34 @@ function start() {
       const b = document.createElement('div'); b.className = 'draw-ball'; b.textContent = n; drawDisplay.appendChild(b);
       updateLiveHighlights(sum);
     }
-    sumBall.style.top = '18px'; sumBall.style.left = '180px';
+    parkBall(false);
     await sleep(700);
 
-    // tickets (display only; the money was already settled by the server)
+    // detailed report (display only; the money was already settled by the server)
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:8px;border:1px solid #30363d;border-radius:6px;padding:6px 8px;';
+    const rk = getResRange(r.total);
+    wrap.appendChild(logEl('DRAW RESULT', 'SUM ' + r.total, '#c9d1d9',
+      [{ text: (rk ? label(rk) : '?') + ' · ' + (r.total <= 810 ? 'UNDER' : 'OVER') + ' · ' + (r.total % 2 ? 'ODD' : 'EVEN') }]));
     let idx = 0;
     queued.forEach(t => {
-      let tWin = 0;
-      t.bets.forEach(b => { const res = r.results[idx++]; if (res && res.won) tWin += Math.round(t.per * MULT[b] * 100) / 100; });
-      if (tWin > 0) log('WIN', '+$' + tWin.toFixed(2), 'var(--win)'); else log('LOSE', '$0.00', 'var(--loss)');
+      let tNet = 0;
+      const lines = t.bets.map(b => {
+        const res = r.results[idx++], won = !!(res && res.won);
+        if (won) {
+          const pay = Math.round(t.per * MULT[b] * 100) / 100; tNet += pay - t.per;
+          return { text: 'WIN ' + label(b) + ' · ' + money(t.per) + ' x' + MULT[b].toFixed(2) + ' = ' + money(pay), amt: '+' + money(pay - t.per), color: '#7fffb0' };
+        }
+        tNet -= t.per;
+        return { text: 'LOSE ' + label(b) + ' · ' + money(t.per), amt: '-' + money(t.per), color: '#ff7b72' };
+      });
+      tNet = Math.round(tNet * 100) / 100;
+      wrap.appendChild(logEl('BET #' + t.id, sgn(tNet), tNet > 0 ? 'var(--win)' : tNet < 0 ? 'var(--loss)' : '#8b949e', lines));
     });
     const net = Math.round((r.payout - r.stake) * 100) / 100;
+    wrap.appendChild(logEl('ROUND TOTAL', sgn(net), net > 0 ? 'var(--win)' : net < 0 ? 'var(--loss)' : '#8b949e',
+      [{ text: 'Staked ' + money(r.stake) }, { text: 'Returned ' + money(r.payout) }]));
+    $('trans-log').prepend(wrap); $('trans-log').scrollTop = 0;
     me.balance = r.balance; queued = []; isDrawing = false; updateUI();
     addHistory(r.total);
     if (net > 0) showResult(true, net, r.payout, r.stake);
