@@ -1,348 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTO KENO Online — Individual Accounts</title>
-    <style>
-        :root {
-            --bg: #0d1117; --panel: #161b22; --border: #30363d;
-            --accent: #58a6ff; --win: #238636; --loss: #da3633;
-            --text: #c9d1d9;
-            --neon-u: #ff3131; --neon-o: #00d2ff; --neon-n: #39ff14;
-        }
-
-        body { background-color: #000; color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-
-        #game-container {
-            width: 1200px; height: 850px; background: var(--bg); border: 2px solid var(--border);
-            display: grid; 
-            grid-template-areas: "header header" "notice notice" "grid sidebar" "draw sidebar" "controls controls";
-            grid-template-columns: 550px 1fr; grid-template-rows: 70px auto 1fr 120px 280px; 
-            gap: 12px; padding: 15px; box-sizing: border-box; position: relative;
-        }
-
-        /* UPDATED SUM BALL: Home is now in the header */
-        #big-ball-object {
-            position: absolute; width: 65px; height: 65px;
-            background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
-            border-radius: 50%; box-shadow: 0 0 25px var(--accent);
-            display: flex; z-index: 1000; pointer-events: none;
-            color: #000; font-weight: 900; align-items: center; justify-content: center; 
-            flex-direction: column; line-height: 1; border: 3px solid #fff;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            top: 18px; left: 180px; /* Parked next to LOTO KENO */
-        }
-        #big-ball-object b { font-size: 26px; }
-        #big-ball-object span { font-size: 10px; }
-
-        header { 
-            grid-area: header; display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; background: var(--panel); border-radius: 8px; position: relative;
-        }
-        .logo-area { display: flex; align-items: center; gap: 80px; } /* Gap for ball space */
-
-        #number-grid { grid-area: grid; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; align-content: center; }
-        .cell { width: 34px; height: 34px; margin: auto; display: flex; align-items: center; justify-content: center; background: #21262d; font-size: 13px; font-weight: bold; border-radius: 50%; color: #8b949e; }
-        .cell.hit { background: var(--accent); color: white; box-shadow: 0 0 8px var(--accent); transform: scale(1.1); transition: 0.2s; }
-
-        .practice-banner{grid-area:notice;padding:8px 12px;border:1px solid #8b949e55;border-radius:8px;background:#101820;color:#c9d1d9;font-size:12px}.practice-banner strong{color:#58a6ff;letter-spacing:.5px}
-        .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 10px; overflow: hidden; border-left: 1px solid var(--border); padding-left: 15px; }
-
-        .big-rank-container { display: flex; gap: 10px; margin-bottom: 12px; height: 50px; }
-        .rank-card { flex: 1; background: #000; border: 2px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; }
-        .rank-card span { font-size: 18px; color: #fff; }
-        .rank-card small { font-size: 10px; color: #8b949e; }
-        .rank-card.active { border-color: var(--neon-n); box-shadow: 0 0 15px var(--neon-n); background: #0a200a; }
-
-        .binary-rank-container { display: flex; gap: 10px; margin-bottom: 10px; }
-        .bin-card { flex: 1; padding: 8px; border-radius: 8px; text-align: center; font-weight: 900; border: 2px solid var(--border); }
-        .bin-card.active-u { border-color: var(--neon-u); box-shadow: 0 0 15px var(--neon-u); color: var(--neon-u); }
-        .bin-card.active-o { border-color: var(--neon-o); box-shadow: 0 0 15px var(--neon-o); color: var(--neon-o); }
-
-        .history-box { flex: 1; display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-start; background: #000; border: 1px solid var(--border); padding: 10px; overflow-x: hidden; gap: 6px; border-radius: 8px; }
-        .hist-col { display: flex; flex-direction: column; gap: 4px; min-width: 28px; }
-        .hist-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: #111; border: 2px solid transparent; flex-shrink: 0; }
-        .dot-u { color: var(--neon-u); border-color: var(--neon-u); }
-        .dot-o { color: var(--neon-o); border-color: var(--neon-o); }
-        .dot-n { color: var(--neon-n); border-color: var(--neon-n); }
-
-        #trans-log { flex: 1; background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 14px; overflow-y: auto; font-family: 'Courier New', monospace; }
-        #draw-row { grid-area: draw; background: #000; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 8px; border-radius: 12px; }
-        .draw-ball { width: 30px; height: 30px; background: #fff; border-radius: 50%; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
-
-        .controls { grid-area: controls; background: var(--panel); display: flex; flex-direction: column; padding: 15px; border-radius: 12px; }
-        .control-layout { display: flex; gap: 20px; align-items: stretch; }
-        .stake-box { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
-        #bet-val { width: 100%; height: 40px; background: #000; color: #fff; border: 1px solid var(--border); border-radius: 4px; text-align: center; font-weight: 900; font-size: 20px; }
-        #add-bet-btn { background: #1f6feb; color: white; border: none; height: 35px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
-        .betting-section { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .btn-row { display: flex; gap: 8px; }
-        .b-opt { flex: 1; padding: 12px 2px; background: #21262d; border: 1px solid var(--border); color: #8b949e; cursor: pointer; border-radius: 10px; font-weight: bold; display: flex; flex-direction: column; align-items: center; }
-        .b-opt span { font-size: 18px; color: #fff; }
-        .b-opt.selected { background: var(--accent); color: #fff; border-color: #fff; transform: scale(0.95); }
-        .b-opt.live-win { background: var(--win) !important; border-color: #fff; color: #fff; }
-
-        #start-btn { background: var(--win); color: white; border: none; padding: 0 40px; border-radius: 6px; font-weight: 900; cursor: pointer; font-size: 1.5rem; flex-grow: 1; }
-    </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./online-config.js"></script>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOTO KENO — Login</title>
 <style>
-#account-bar{display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap} .top-btn{background:#21262d;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:8px 10px;cursor:pointer;font-weight:700}.top-btn:hover{border-color:#58a6ff}
-#auth-screen{position:fixed;inset:0;background:#05080deF;z-index:5000;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
-.auth-card{width:min(440px,100%);background:#161b22;border:1px solid #30363d;border-radius:16px;padding:24px;box-shadow:0 20px 80px #000;}
-.auth-card h2{margin:0 0 8px;color:#58a6ff}.auth-card p{color:#8b949e;font-size:13px}.auth-card input,.auth-card select{box-sizing:border-box;width:100%;margin:6px 0 12px;padding:12px;background:#05080d;border:1px solid #30363d;border-radius:7px;color:#fff}
-.auth-card button{padding:11px 14px;border:0;border-radius:7px;background:#238636;color:#fff;font-weight:800;cursor:pointer}.auth-row{display:flex;gap:8px}.auth-row button{flex:1}.muted-btn{background:#30363d!important}.hidden{display:none!important}
-#online-panel{position:fixed;z-index:3000;right:18px;top:90px;width:min(380px,calc(100vw - 36px));max-height:75vh;overflow:auto;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px;box-shadow:0 15px 60px #000}
-#online-panel input{width:100%;box-sizing:border-box;padding:10px;background:#05080d;color:white;border:1px solid #30363d;border-radius:6px;margin:6px 0}
-#online-panel button{background:#1f6feb;color:white;border:0;border-radius:6px;padding:9px 12px;margin:4px 4px 4px 0;cursor:pointer;font-weight:700}
-#online-panel .room{padding:10px;margin:6px 0;border:1px solid #30363d;border-radius:8px}
-#status-msg{font-size:12px;color:#8b949e;white-space:pre-wrap;margin-top:8px}
-@media(max-width:850px){body{height:auto;min-height:100vh;overflow:auto;align-items:flex-start}#game-container{width:100%;height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-areas:"header" "notice" "grid" "draw" "sidebar" "controls";grid-template-rows:auto auto auto auto 260px auto;padding:8px;gap:8px}.sidebar{border-left:0;padding-left:0}.cell{width:clamp(22px,7vw,34px);height:clamp(22px,7vw,34px)}.controls{padding:8px}.control-layout{gap:6px;flex-wrap:wrap}#start-btn{min-height:48px;padding:10px;font-size:1.1rem}.btn-row{flex-wrap:wrap}.b-opt{min-width:60px;padding:8px 2px}.b-opt span{font-size:15px}#draw-row{grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}.draw-ball{width:clamp(20px,6vw,30px);height:clamp(20px,6vw,30px);font-size:11px}.big-rank-container{gap:3px}.rank-card small{font-size:8px}.logo-area{gap:4px}header{padding:10px;gap:8px;flex-wrap:wrap}#big-ball-object{display:none}}
-</style>
-</head>
-<body>
-
-<div id="game-container">
-    <div id="big-ball-object"><span>SUM</span><b>0</b></div>
-
-    <header>
-        <div class="logo-area">
-            <div style="font-weight: 900; color: var(--accent); font-size: 1.6rem; letter-spacing: 1px;">LOTO KENO</div>
-        </div>
-        <div style="font-size: 1.4rem; font-weight: bold;">BALANCE: <span id="balance" style="color:var(--win)">$0.00</span></div>
-    <div id="account-bar"><span id="account-label">Not signed in</span><button class="top-btn" onclick="toggleOnline()">ONLINE</button><button class="top-btn" onclick="signOutUser()" id="signout-btn" style="display:none">SIGN OUT</button></div>
-    </header>
-    
-    <div class="practice-banner" role="status"><strong>🎯 PRACTICE MODE</strong> — Draws are for entertainment/testing only. No wagers, deposits, or winnings are generated by the game.</div>
-    <div id="number-grid"></div>
-
-    <div class="sidebar">
-        <div class="history-label">RANGE HISTORY</div>
-        <div class="history-box" id="num-hist" style="height: 120px;"></div>
-        <div class="history-label">U/O HISTORY</div>
-        <div class="history-box" id="ou-hist" style="height: 120px;"></div>
-        <div id="trans-log"></div>
-    </div>
-    
-    <div id="draw-row"></div>
-
-    <div class="controls">
-        <div class="big-rank-container">
-            <div class="rank-card" id="card-1"><span>RANK 1</span><small>210 - 695</small></div>
-            <div class="rank-card" id="card-2"><span>RANK 2</span><small>696 - 763</small></div>
-            <div class="rank-card" id="card-3"><span>RANK 3</span><small>764 - 855</small></div>
-            <div class="rank-card" id="card-4"><span>RANK 4</span><small>856 - 923</small></div>
-            <div class="rank-card" id="card-5"><span>RANK 5</span><small>924 - 1410</small></div>
-        </div>
-        <div class="binary-rank-container">
-            <div class="bin-card" id="card-U">UNDER: 210 - 810</div>
-            <div class="bin-card" id="card-O">OVER: 811 - 1410</div>
-        </div>
-
-        <div class="control-layout">
-            <div class="stake-box">
-                <input type="number" id="bet-val" value="10">
-                <button id="add-bet-btn" onclick="addBetToQueue()" disabled title="Real-money wagering is disabled pending compliant server-side game settlement">WAGER LOCKED</button>
-                <button onclick="cancelLastTicket()" disabled style="margin-top:5px; background:none; border:1px solid #444; color:#999; cursor:pointer; font-size:10px; padding:5px;">UNDO</button>
-            </div>
-            <div class="betting-section">
-                <div class="btn-row">
-                    <button class="b-opt" id="btn-1" data-v="1"><span>1</span><b>x9.20</b></button>
-                    <button class="b-opt" id="btn-2" data-v="2"><span>2</span><b>x4.60</b></button>
-                    <button class="b-opt" id="btn-3" data-v="3"><span>3</span><b>x2.30</b></button>
-                    <button class="b-opt" id="btn-4" data-v="4"><span>4</span><b>x4.60</b></button>
-                    <button class="b-opt" id="btn-5" data-v="5"><span>5</span><b>x9.20</b></button>
-                </div>
-                <div class="btn-row">
-                    <button class="b-opt" id="btn-ODD" data-v="ODD"><span>ODD</span><b>x1.95</b></button>
-                    <button class="b-opt" id="btn-EVEN" data-v="EVEN"><span>EVEN</span><b>x1.95</b></button>
-                    <button class="b-opt" id="btn-UNDER" data-v="UNDER"><span>UNDER</span><b>x1.95</b></button>
-                    <button class="b-opt" id="btn-OVER" data-v="OVER"><span>OVER</span><b>x1.95</b></button>
-                </div>
-            </div>
-            <button id="start-btn" onclick="startGame()">PRACTICE DRAW</button>
-        </div>
-    </div>
-</div>
-
-<div id="auth-screen">
- <div class="auth-card">
-  <h2>LOTO KENO ONLINE</h2><p>Create an account or sign in. Your account balance is stored in Supabase, not just in this browser.</p>
-  <label>Email</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com">
-  <label>Password</label><input id="auth-password" type="password" autocomplete="current-password" placeholder="At least 8 characters">
-  <div class="auth-row"><button onclick="registerUser()">CREATE ACCOUNT</button><button class="muted-btn" onclick="loginUser()">SIGN IN</button></div>
-  <p id="auth-message">Connecting to the game database automatically…</p><p class="small-note">Database connection is configured by the website administrator. You do not need to enter connection details here.</p>
- </div>
-</div>
-<div id="online-panel" class="hidden"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;color:#58a6ff">PLAYER WALLET</h3><button onclick="toggleOnline()">CLOSE</button></div>
- <p id="online-status">Sign in and connect to Supabase to manage your account.</p>
- <div class="wallet-section"><h4>Deposit request</h4><p class="small-note">Submit a request with payment reference. Funds are not credited until an authorized reviewer verifies receipt.</p><label>Amount</label><input id="deposit-amount" type="number" min="1" step="0.01" placeholder="Amount"><label>Payment method</label><select id="deposit-method"><option value="bank_transfer">Bank transfer</option><option value="approved_provider">Approved payment provider</option></select><label>Payment reference / instructions</label><input id="deposit-reference" maxlength="120" placeholder="Reference or note"><button onclick="submitPaymentRequest('deposit')">SUBMIT DEPOSIT REQUEST</button></div>
- <div class="wallet-section"><h4>Withdrawal request</h4><p class="small-note">Enter a withdrawal amount and payout reference/details. Never enter card PINs or passwords here. Requests are reviewed before payout.</p><label>Amount</label><input id="withdraw-amount" type="number" min="1" step="0.01" placeholder="Amount"><label>Payout method</label><select id="withdraw-method"><option value="bank_transfer">Bank transfer</option><option value="approved_provider">Approved payment provider</option></select><label>Payout destination reference</label><input id="withdraw-reference" maxlength="120" placeholder="Account name / masked destination"><button onclick="submitPaymentRequest('withdrawal')">REQUEST WITHDRAWAL</button></div>
- <div class="wallet-section"><h4>My payment requests</h4><button onclick="loadMyRequests()">REFRESH REQUESTS</button><div id="my-requests" class="small-note">Sign in to view requests.</div></div><div class="wallet-section"><h4>Balance transaction history</h4><p class="small-note">Shows wallet ledger entries recorded by the database. Practice draws do not appear here because they never change your balance.</p><button onclick="loadMyTransactions()">REFRESH TRANSACTIONS</button><div id="my-transactions" class="small-note">Sign in to view transactions.</div></div>
- <div id="admin-tools"></div></div>
-<style>.wallet-section{border-top:1px solid #30363d;margin-top:14px;padding-top:10px}.wallet-section h4{margin:4px 0;color:#c9d1d9}.small-note{font-size:12px;color:#8b949e;line-height:1.45}#online-panel label{font-size:12px;color:#c9d1d9}#online-panel select{width:100%;box-sizing:border-box;padding:10px;background:#05080d;color:white;border:1px solid #30363d;border-radius:6px;margin:6px 0}#admin-tools{border-top:1px solid #30363d;margin-top:14px;padding-top:12px}#admin-tools .request{border:1px solid #30363d;border-radius:8px;padding:8px;margin:8px 0;font-size:12px;overflow-wrap:anywhere}#my-requests .request,#my-transactions .request{border:1px solid #30363d;border-radius:8px;padding:8px;margin:8px 0;overflow-wrap:anywhere}#online-panel button:disabled,.auth-card button:disabled{opacity:.55;cursor:wait}@media(max-width:480px){#online-panel{right:8px;top:8px;width:calc(100vw - 48px);max-height:92vh}header{align-items:flex-start}#account-bar{width:100%}.logo-area{gap:0}#number-grid{gap:2px;padding:5px}.cell{font-size:11px}}</style>
+:root{--bg:#0d1117;--border:#30363d;--accent:#58a6ff;--win:#238636;--text:#c9d1d9}*{box-sizing:border-box}
+body{background:#000;color:var(--text);font-family:'Segoe UI',sans-serif;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+.card{width:400px;max-width:100%;background:var(--bg);border:2px solid var(--border);padding:32px;border-radius:16px}
+h1{color:var(--accent);text-align:center;margin:0 0 6px;letter-spacing:2px}.sub{text-align:center;color:#8b949e;margin-bottom:25px;font-size:13px}
+label{font-size:12px;color:#8b949e;display:block;margin-top:14px}input{width:100%;padding:12px;margin-top:6px;background:#000;color:#fff;border:1px solid var(--border);border-radius:6px;font-size:14px}
+button{width:100%;padding:13px;margin-top:14px;border:0;background:var(--win);color:#fff;font-weight:900;font-size:14px;border-radius:8px;cursor:pointer}button.alt{background:#21262d}button.link{background:transparent;color:var(--accent);border:1px solid var(--border);font-weight:600}button:disabled{opacity:.6;cursor:wait}
+.msg{margin-top:16px;padding:10px;border-radius:6px;font-size:13px;display:none;overflow-wrap:anywhere}.msg.err{background:#4a1113;color:#ffb3b3;display:block}.msg.ok{background:#0a3622;color:#7fffb0;display:block}.hidden{display:none!important}.hint{color:#8b949e;font-size:12px;line-height:1.5;margin-top:10px}
+</style></head><body><div class="card">
+<h1>LOTO KENO</h1><div class="sub" id="subtitle">Sign in to play</div>
+<section id="loginPanel">
+<label for="email">Email</label><input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+<label for="password">Password</label><input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+<button id="loginBtn" type="button">LOGIN</button><button class="alt" id="signupBtn" type="button">CREATE ACCOUNT</button><button class="link" id="forgotBtn" type="button">FORGOT PASSWORD?</button>
+</section>
+<section id="resetPanel" class="hidden"><p class="hint">Enter your registered email. We'll send a secure password-reset link.</p>
+<label for="resetEmail">Registered email</label><input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email">
+<button id="sendResetBtn" type="button">SEND RESET EMAIL</button><button class="alt" id="backBtn" type="button">BACK TO LOGIN</button></section>
+<section id="newPasswordPanel" class="hidden"><p class="hint">Choose a new password with at least 8 characters.</p>
+<label for="newPassword">New password</label><input type="password" id="newPassword" autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+<label for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" placeholder="Repeat new password">
+<button id="savePasswordBtn" type="button">UPDATE PASSWORD</button></section>
+<div class="msg" id="msg" role="status" aria-live="polite"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/supabase-client.js"></script>
 <script>
-    let balance = 0, selectedBets = new Set(), queuedTransactions = [], isDrawing = false, historyData = { num: [], ou: [] };
-    const MAX_COL = 18;
-
-    const grid = document.getElementById('number-grid');
-    for(let i=1; i<=80; i++) {
-        const d = document.createElement('div'); d.className = 'cell'; d.id = `cell-${i}`; d.textContent = i; grid.appendChild(d);
-    }
-
-    document.querySelectorAll('.b-opt').forEach(btn => {
-        btn.onclick = () => { if(!isDrawing) {
-            const val = btn.dataset.v;
-            if(selectedBets.has(val)) { selectedBets.delete(val); btn.classList.remove('selected'); }
-            else { selectedBets.add(val); btn.classList.add('selected'); }
-        }};
-    });
-
-    function addBetToQueue() {
-        alert('Real-money wagers are disabled until a licensed, server-authoritative game engine and compliant payment integration are configured. Use PRACTICE DRAW to test the animation.');
-    }
-
-    function cancelLastTicket() {
-        alert('No wager tickets are active. Practice draws do not use account funds.');
-    }
-
-    async function startGame() {
-        if(isDrawing) return;
-        isDrawing = true; updateUI();
-        const sumBall = document.getElementById('big-ball-object'), bigBallText = sumBall.querySelector('b');
-        const drawDisplay = document.getElementById('draw-row'), containerRect = document.getElementById('game-container').getBoundingClientRect();
-        drawDisplay.innerHTML = ''; bigBallText.textContent = '0';
-        document.querySelectorAll('.cell').forEach(c => c.classList.remove('hit'));
-        
-        let drawn = [], sum = 0;
-        for(let i=0; i<20; i++) {
-            let n; do { n = Math.floor(Math.random() * 80) + 1; } while(drawn.includes(n));
-            drawn.push(n); sum += n;
-            const targetCell = document.getElementById(`cell-${n}`);
-            const cellRect = targetCell.getBoundingClientRect();
-            
-            // Move Ball to active grid cell
-            sumBall.style.left = (cellRect.left - containerRect.left - 15) + 'px';
-            sumBall.style.top = (cellRect.top - containerRect.top - 15) + 'px';
-            
-            await new Promise(r => setTimeout(r, 350));
-            targetCell.classList.add('hit'); bigBallText.textContent = sum;
-            const b = document.createElement('div'); b.className = 'draw-ball'; b.textContent = n; drawDisplay.appendChild(b);
-            updateLiveHighlights(sum);
-        }
-
-        // RETURN BALL TO HEADER POSITION
-        sumBall.style.top = '18px';
-        sumBall.style.left = '180px';
-
-        await new Promise(r => setTimeout(r, 600));
-
-        const resN = getResRange(sum), resOU = sum <= 810 ? "U" : "O";
-        // Practice-only draw: no account funds are debited or credited in the browser.
-        log('PRACTICE DRAW', 'No wager', 'var(--accent)');
-        updateHistory('num-hist', 'num', resN || "?", 'dot-n');
-        updateHistory('ou-hist', 'ou', resOU, resOU === 'U' ? 'dot-u' : 'dot-o');
-        queuedTransactions = []; isDrawing = false; updateUI();
-    }
-
-    function updateLiveHighlights(sum) {
-        document.querySelectorAll('.b-opt').forEach(btn => btn.classList.remove('live-win'));
-        const nRange = getResRange(sum);
-        if(nRange) document.getElementById(`btn-${nRange}`).classList.add('live-win');
-        document.getElementById(`btn-${sum % 2 === 0 ? 'EVEN' : 'ODD'}`).classList.add('live-win');
-        document.getElementById(`btn-${sum <= 810 ? 'UNDER' : 'OVER'}`).classList.add('live-win');
-
-        document.querySelectorAll('.rank-card').forEach(c => c.classList.remove('active'));
-        if(nRange) document.getElementById(`card-${nRange}`).classList.add('active');
-        
-        const cardU = document.getElementById('card-U'), cardO = document.getElementById('card-O');
-        cardU.classList.remove('active-u'); cardO.classList.remove('active-o');
-        if(sum <= 810) cardU.classList.add('active-u'); else cardO.classList.add('active-o');
-    }
-
-    function getResRange(s) {
-        if(s >= 210 && s <= 695) return "1"; if(s >= 696 && s <= 763) return "2";
-        if(s >= 764 && s <= 855) return "3"; if(s >= 856 && s <= 923) return "4";
-        if(s >= 924 && s <= 1410) return "5"; return null;
-    }
-
-    function updateHistory(elementId, dataKey, val, cssClass) {
-        let data = historyData[dataKey];
-        if(data.length > 0 && data[data.length-1][0] === val) data[data.length-1].push(val); 
-        else data.push([val]);
-        if(data.length > MAX_COL) data.shift();
-        const container = document.getElementById(elementId);
-        container.innerHTML = '';
-        data.forEach(column => {
-            const colDiv = document.createElement('div'); colDiv.className = 'hist-col';
-            column.forEach(v => {
-                const dot = document.createElement('div'); dot.className = `hist-dot ${cssClass}`; dot.textContent = v; colDiv.appendChild(dot);
-            });
-            container.appendChild(colDiv);
-        });
-    }
-
-    function log(title, amount, color) {
-        const l = document.getElementById('trans-log');
-        const e = document.createElement('div'); e.style.color = color; e.style.marginBottom = "5px"; e.style.borderBottom = "1px solid #222";
-        e.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${title}</b><span>${amount}</span></div>`;
-        l.prepend(e);
-    }
-
-    function updateUI() { document.getElementById('balance').textContent = `$${Number(balance||0).toFixed(2)}`; document.getElementById('start-btn').disabled = isDrawing; }
-
-// --- Supabase account, individual practice game, wallet requests, and admin review ---
-let sb = null, currentUser = null, currentProfile = null;
-const SB_URL_KEY='loto_supabase_url_v1', SB_ANON_KEY='loto_supabase_anon_v1';
-function authMsg(t){const e=document.getElementById('auth-message');if(e)e.textContent=t;}
-function onlineMsg(t){const e=document.getElementById('online-status');if(e)e.textContent=t;}
-function getSupabaseConfig(){
- const cfg=window.LOTO_SUPABASE_CONFIG||{};
- let url=String(cfg.url||'').trim(), key=String(cfg.anonKey||cfg.publishableKey||'').trim();
- const placeholder=!key||/PASTE_YOUR_SUPABASE|YOUR_SUPABASE|REPLACE_ME/i.test(key);
- if((!url||placeholder)&&localStorage.getItem(SB_URL_KEY)&&localStorage.getItem(SB_ANON_KEY)){url=localStorage.getItem(SB_URL_KEY)||url;key=localStorage.getItem(SB_ANON_KEY)||key;}
- return {url,key};
-}
-function initializeSupabase(){
- if(sb)return true;
- if(!window.supabase||typeof window.supabase.createClient!=='function'){authMsg('Supabase library did not load. Check your internet connection and refresh.');return false;}
- const {url,key}=getSupabaseConfig();
- if(!url.startsWith('https://')||!key||/PASTE_YOUR_SUPABASE|YOUR_SUPABASE|REPLACE_ME/i.test(key)){authMsg('Automatic connection is ready, but the administrator must add the publishable/anon key once in online-config.js.');return false;}
- try{sb=window.supabase.createClient(url,key);authMsg('Database connected. You can register or sign in.');return true;}catch(e){authMsg('Automatic database setup failed: '+e.message);return false;}
-}
-async function ensureClient(){if(sb)return true;if(!initializeSupabase())return false;return true;}
-async function registerUser(){if(!await ensureClient())return;let email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value;if(!email||password.length<8){authMsg('Enter a valid email and password with at least 8 characters.');return;}authMsg('Creating account…');let {data,error}=await sb.auth.signUp({email,password});if(error){authMsg(error.message);return;}if(data.session)await handleSession(data.session);else authMsg('Registration submitted. Check your email to confirm the account, then sign in.');}
-async function loginUser(){if(!await ensureClient())return;let email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value;if(!email||!password){authMsg('Enter your email and password.');return;}authMsg('Signing in…');let {data,error}=await sb.auth.signInWithPassword({email,password});if(error){authMsg(error.message);return;}await handleSession(data.session);}
-async function handleSession(session){currentUser=session?.user||null;if(!currentUser){showSignedOut();return;}const {data,error}=await sb.from('profiles').select('id,account_id,display_name,balance,role').eq('id',currentUser.id).single();if(error){authMsg('Signed in, but profile could not be loaded. Run the latest supabase_setup.sql. Details: '+error.message);return;}currentProfile=data;balance=Number(data.balance||0);updateUI();document.getElementById('account-label').textContent=(data.display_name||currentUser.email)+' · ID '+data.account_id+' · $'+balance.toFixed(2)+(data.role==='admin'?' · ADMIN':'');document.getElementById('signout-btn').style.display='inline-block';document.getElementById('auth-screen').classList.add('hidden');onlineMsg('Signed in as '+data.account_id+'. Your game is individual to this account. Practice draws do not affect your wallet.');if(data.role==='admin')showAdminTools();else hideAdminTools();await loadMyRequests();await loadMyTransactions();}
-function showSignedOut(){currentUser=null;currentProfile=null;balance=0;updateUI();document.getElementById('account-label').textContent='Not signed in';document.getElementById('signout-btn').style.display='none';document.getElementById('auth-screen').classList.remove('hidden');document.getElementById('my-requests').textContent='Sign in to view requests.';document.getElementById('my-transactions').textContent='Sign in to view transactions.';hideAdminTools();}
-async function signOutUser(){if(sb)await sb.auth.signOut();showSignedOut();}
-function toggleOnline(){document.getElementById('online-panel').classList.toggle('hidden');}
-async function submitPaymentRequest(kind){
- if(!currentUser){onlineMsg('Please sign in first.');return;}
- const isDeposit=kind==='deposit', amount=Number(document.getElementById(isDeposit?'deposit-amount':'withdraw-amount').value), method=document.getElementById(isDeposit?'deposit-method':'withdraw-method').value, reference=document.getElementById(isDeposit?'deposit-reference':'withdraw-reference').value.trim();
- if(!Number.isFinite(amount)||amount<1||amount>1000000){onlineMsg('Enter an amount between 1 and 1,000,000.');return;}
- if(!reference){onlineMsg('Enter a payment reference or payout destination reference.');return;}
- const buttons=[...document.querySelectorAll('#online-panel button')];buttons.forEach(b=>b.disabled=true);try{onlineMsg('Submitting request…');const {data,error}=await sb.rpc(isDeposit?'request_deposit':'request_withdrawal',{request_amount:Math.round(amount*100)/100,payment_method:method,payment_reference:reference});
- if(error){onlineMsg('Request failed: '+error.message);return;}
- onlineMsg((isDeposit?'Deposit':'Withdrawal')+' request submitted. Request ID: '+(data?.request_id||'created')+'. Status: pending review.');
- document.getElementById(isDeposit?'deposit-reference':'withdraw-reference').value='';await loadMyRequests();await loadMyTransactions();await refreshProfile();}finally{buttons.forEach(b=>b.disabled=false);}
-}
-async function refreshProfile(){if(!currentUser)return;const {data,error}=await sb.from('profiles').select('id,account_id,display_name,balance,role').eq('id',currentUser.id).single();if(error)return;currentProfile=data;balance=Number(data.balance||0);updateUI();document.getElementById('account-label').textContent=(data.display_name||currentUser.email)+' · ID '+data.account_id+' · $'+balance.toFixed(2)+(data.role==='admin'?' · ADMIN':'');}
-async function loadMyRequests(){if(!currentUser||!sb)return;const box=document.getElementById('my-requests');const {data,error}=await sb.from('payment_requests').select('id,request_type,amount,payment_method,payment_reference,status,created_at,review_note').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);if(error){box.textContent='Could not load requests: '+error.message+' (run the latest SQL setup).';return;}if(!data.length){box.textContent='No payment requests yet.';if(currentProfile?.role==='admin')await loadAdminRequests();return;}box.innerHTML='';data.forEach(r=>{const d=document.createElement('div');d.className='request';d.textContent=`#${r.id} · ${r.request_type.toUpperCase()} · $${Number(r.amount).toFixed(2)} · ${r.status.toUpperCase()} · ${new Date(r.created_at).toLocaleString()}${r.review_note?' · '+r.review_note:''}`;box.appendChild(d);});if(currentProfile?.role==='admin')await loadAdminRequests();}
-async function loadMyTransactions(){
- if(!currentUser||!sb)return;const box=document.getElementById('my-transactions');box.textContent='Loading transactions…';
- const {data,error}=await sb.from('balance_transactions').select('id,amount,transaction_type,reference,note,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(30);
- if(error){box.textContent='Could not load transactions: '+error.message+' (run the latest SQL setup).';return;}
- if(!data.length){box.textContent='No balance transactions yet.';return;}box.innerHTML='';
- data.forEach(t=>{const d=document.createElement('div');d.className='request';const sign=Number(t.amount)>0?'+':'';d.textContent=`#${t.id} · ${t.transaction_type.replaceAll('_',' ').toUpperCase()} · ${sign}$${Number(t.amount).toFixed(2)} · ${new Date(t.created_at).toLocaleString()}${t.reference?' · '+t.reference:''}${t.note?' · '+t.note:''}`;box.appendChild(d);});
-}
-function showAdminTools(){const box=document.getElementById('admin-tools');box.innerHTML='<h3 style="color:#39ff14">ADMIN · PAYMENT REVIEW</h3><p class="small-note">Verify deposits in the payment provider/bank independently before approving. Withdrawal approvals initiate only an internal status change; payout must be completed through your compliant provider and recorded.</p><button onclick="loadAdminRequests()">REFRESH ALL PENDING REQUESTS</button><div id="admin-requests">Loading…</div><h4>Manual balance adjustment</h4><p class="small-note">Use only for documented corrections after review; every adjustment is audited.</p><input id="admin-player-id" placeholder="Player account ID"><input id="admin-refill-amount" type="number" min="0.01" step="0.01" placeholder="Positive adjustment amount"><input id="admin-refill-note" maxlength="160" placeholder="Audit reason / reference"><button onclick="adminRefill()">CREDIT VERIFIED PAYMENT / CORRECTION</button><div id="admin-result" class="small-note"></div>';loadAdminRequests();}
-function hideAdminTools(){const box=document.getElementById('admin-tools');if(box)box.innerHTML='';}
-async function loadAdminRequests(){if(!currentUser||currentProfile?.role!=='admin')return;const box=document.getElementById('admin-requests');if(!box)return;box.textContent='Loading…';const {data,error}=await sb.from('payment_requests').select('id,user_id,request_type,amount,payment_method,payment_reference,status,created_at').eq('status','pending').order('created_at',{ascending:true}).limit(100);if(error){box.textContent='Could not load requests: '+error.message;return;}box.innerHTML='';if(!data.length){box.textContent='No pending requests.';return;}data.forEach(r=>{const d=document.createElement('div');d.className='request';const info=document.createElement('div');info.textContent=`#${r.id} · ${r.request_type.toUpperCase()} · $${Number(r.amount).toFixed(2)} · ${r.payment_method} · ${r.payment_reference} · user ${r.user_id} · ${new Date(r.created_at).toLocaleString()}`;d.appendChild(info);const note=document.createElement('input');note.placeholder='Review note / provider transaction ID';note.maxLength=160;d.appendChild(note);['approve','reject'].forEach(action=>{const b=document.createElement('button');b.textContent=action.toUpperCase();b.onclick=async()=>{if(action==='approve'&&r.request_type==='deposit'&&!note.value.trim()){alert('Add the verified bank/provider transaction reference before approving this deposit.');return;}b.disabled=true;const {data:out,error:e}=await sb.rpc('admin_review_payment_request',{target_request_id:r.id,approve:action==='approve',review_note:note.value.trim()});if(e){alert('Review failed: '+e.message);b.disabled=false;return;}await loadAdminRequests();await refreshProfile();await loadMyRequests();};d.appendChild(b);});box.appendChild(d);});}
-async function adminRefill(){const account_id=document.getElementById('admin-player-id').value.trim(),amount=Number(document.getElementById('admin-refill-amount').value),note=document.getElementById('admin-refill-note').value.trim(),out=document.getElementById('admin-result');if(!account_id||!Number.isFinite(amount)||amount<=0||!note){out.textContent='Enter account ID, positive amount, and audit reason.';return;}out.textContent='Processing…';const submitBtn=[...document.querySelectorAll('#admin-tools button')].find(b=>b.textContent.includes('CREDIT VERIFIED'));if(submitBtn)submitBtn.disabled=true;const {data,error}=await sb.rpc('admin_refill_balance',{target_account_id:account_id,refill_amount:amount,refill_note:note});if(error){out.textContent='Adjustment failed: '+error.message;if(submitBtn)submitBtn.disabled=false;return;}out.textContent='Credit recorded. New balance: $'+Number(data?.new_balance||0).toFixed(2);if(submitBtn)submitBtn.disabled=false;if(currentProfile?.account_id===account_id)await refreshProfile();await loadMyTransactions();}
-window.addEventListener('DOMContentLoaded',async()=>{if(!initializeSupabase())return;try{const {data,error}=await sb.auth.getSession();if(error)authMsg('Database connected, but session could not be checked: '+error.message);else if(data.session)await handleSession(data.session);else authMsg('Database connected. Create an account or sign in.');sb.auth.onAuthStateChange((_event,session)=>{if(session&&!currentUser)handleSession(session);else if(!session&&currentUser)showSignedOut();});}catch(e){authMsg('Could not initialize the database session: '+e.message);}});
-</script>
-</body>
-</html>
+const msg=document.getElementById('msg'),email=document.getElementById('email'),password=document.getElementById('password');
+const loginPanel=document.getElementById('loginPanel'),resetPanel=document.getElementById('resetPanel'),newPasswordPanel=document.getElementById('newPasswordPanel'),subtitle=document.getElementById('subtitle');
+let recoveryMode=false;
+function show(t,ok=false){msg.textContent=t;msg.className='msg '+(ok?'ok':'err')}
+function clearMessage(){msg.textContent='';msg.className='msg'}
+function getClient(){if(typeof supabase==='undefined'||!supabase||!supabase.auth){show('Supabase client did not load. Check js/supabase-client.js and its project URL/key.');return null}return supabase}
+function cleanEmail(v){return String(v||'').trim().replace(/[\u200B-\u200D\uFEFF]/g,'')}
+function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
+function setPanel(p){loginPanel.classList.toggle('hidden',p!=='login');resetPanel.classList.toggle('hidden',p!=='reset');newPasswordPanel.classList.toggle('hidden',p!=='newPassword');subtitle.textContent=p==='reset'?'Recover your account':p==='newPassword'?'Set a new password':'Sign in to play';clearMessage()}
+async function checkExistingSession(){const c=getClient();if(!c)return;try{const {data,error}=await c.auth.getSession();if(error)throw error;if(data.session&&!recoveryMode)location.href='game.html'}catch(e){show('Could not check session: '+(e.message||e))}}
+document.getElementById('loginBtn').onclick=async()=>{clearMessage();const c=getClient();if(!c)return;const e=cleanEmail(email.value);if(!validEmail(e))return show('Please enter a valid email address, such as you@example.com.');if(!password.value)return show('Please enter your password.');const b=document.getElementById('loginBtn');b.disabled=true;try{const {error}=await c.auth.signInWithPassword({email:e,password:password.value});if(error)throw error;show('Logged in successfully.',true);location.href='game.html'}catch(x){show(x.message||'Login failed. Check your email and password.')}finally{b.disabled=false}};
+document.getElementById('signupBtn').onclick=async()=>{clearMessage();const c=getClient();if(!c)return;const e=cleanEmail(email.value);if(!validEmail(e))return show('Please enter a valid email address.');if(password.value.length<8)return show('Password must contain at least 8 characters.');const b=document.getElementById('signupBtn');b.disabled=true;try{const {data,error}=await c.auth.signUp({email:e,password:password.value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;show(data.session?'Account created and signed in.':'Registration submitted. Check your email to confirm your account.',true)}catch(x){show(x.message||'Could not create account.')}finally{b.disabled=false}};
+document.getElementById('forgotBtn').onclick=()=>{document.getElementById('resetEmail').value=cleanEmail(email.value);setPanel('reset')};
+document.getElementById('backBtn').onclick=()=>setPanel('login');
+document.getElementById('sendResetBtn').onclick=async()=>{clearMessage();const c=getClient();if(!c)return;const e=cleanEmail(document.getElementById('resetEmail').value);if(!validEmail(e))return show('Enter a valid registered email address. Check for spaces or missing characters.');const b=document.getElementById('sendResetBtn');b.disabled=true;try{const {error}=await c.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});if(error)throw error;show('If this email belongs to an account, a reset link will be sent. Check your inbox and spam folder.',true)}catch(x){const d=x.message||String(x);show(d+(d.toLowerCase().includes('invalid format')?' Please type the email manually without spaces.':''))}finally{b.disabled=false}};
+document.getElementById('savePasswordBtn').onclick=async()=>{clearMessage();const c=getClient();if(!c)return;const a=document.getElementById('newPassword').value,bp=document.getElementById('confirmPassword').value;if(a.length<8)return show('New password must contain at least 8 characters.');if(a!==bp)return show('The passwords do not match.');const b=document.getElementById('savePasswordBtn');b.disabled=true;try{const {error}=await c.auth.updateUser({password:a});if(error)throw error;recoveryMode=false;await c.auth.signOut();setPanel('login');show('Password updated successfully. Sign in with your new password.',true)}catch(x){show((x.message||'Could not update password.')+' If the link expired, request a new reset email.')}finally{b.disabled=false}};
+const client=getClient();if(client){client.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY'){recoveryMode=true;setPanel('newPassword');show('Recovery link verified. Enter your new password.',true)}});if(location.hash.includes('error=')){const p=new URLSearchParams(location.hash.slice(1));show('Recovery link error: '+(p.get('error_description')||p.get('error')||'The link may have expired.'))}checkExistingSession()}
+</script></body></html>
