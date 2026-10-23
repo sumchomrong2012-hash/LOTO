@@ -168,10 +168,19 @@ grant execute on function public.request_withdrawal(numeric,text,text) to authen
 grant execute on function public.admin_review_payment_request(bigint,boolean,text) to authenticated;
 grant execute on function public.admin_refill_balance(text,numeric,text) to authenticated;
 
--- IMPORTANT: after registering your account, promote only your trusted admin account using your exact email.
--- Run this separately in SQL Editor:
--- update public.profiles p set role='admin' from auth.users u where p.id=u.id and u.email='YOUR-EMAIL';
+-- ADMIN SETUP:
+-- The account must already be registered on the website before this runs.
+-- This promotes the matching email to admin. If the account is not registered yet,
+-- this statement updates zero rows; register first, then run this statement separately.
+-- Keep this email restricted to your trusted administrator account only.
 
 -- Enable Realtime publication for wallet request updates if desired; UI currently refreshes manually.
 do $$ begin alter publication supabase_realtime add table public.payment_requests;
 exception when duplicate_object then null; when undefined_object then null; end $$;
+
+-- Promote the trusted administrator account (runs only if the profile already exists).
+UPDATE public.profiles AS p
+SET role = 'admin'
+FROM auth.users AS u
+WHERE p.id = u.id
+  AND lower(u.email) = lower('sumchomrong.pst@gmail.com');
