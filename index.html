@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOTO KENO — Login</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
+<style>
+:root{--bg:#0d1117;--border:#30363d;--accent:#58a6ff;--win:#238636;--text:#c9d1d9}
+*{box-sizing:border-box}
+body{background:#000;color:var(--text);font-family:'Segoe UI',sans-serif;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+.card{width:400px;max-width:100%;background:var(--bg);border:2px solid var(--border);padding:32px;border-radius:16px}
+h1{color:var(--accent);text-align:center;margin:0 0 6px;letter-spacing:2px}
+.sub{text-align:center;color:#8b949e;margin-bottom:25px;font-size:13px}
+label{font-size:12px;color:#8b949e;display:block;margin-top:14px}
+input{width:100%;padding:12px;margin-top:6px;background:#000;color:#fff;border:1px solid var(--border);border-radius:6px;font-size:16px}
+button{width:100%;padding:13px;margin-top:14px;border:0;background:var(--win);color:#fff;font-weight:900;font-size:14px;border-radius:8px;cursor:pointer}
+button.alt{background:#21262d}
+button.link{background:transparent;color:var(--accent);border:1px solid var(--border);font-weight:600}
+button:disabled{opacity:.6;cursor:wait}
+.msg{margin-top:16px;padding:10px;border-radius:6px;font-size:13px;display:none;overflow-wrap:anywhere}
+.msg.err{background:#4a1113;color:#ffb3b3;display:block}
+.msg.ok{background:#0a3622;color:#7fffb0;display:block}
+.hidden{display:none!important}
+.hint{color:#8b949e;font-size:12px;line-height:1.5;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>LOTO KENO</h1>
+  <div class="sub" id="subtitle">Sign in to play</div>
+
+  <section id="loginPanel">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+    <button id="loginBtn" type="button">LOGIN</button>
+    <button class="alt" id="signupBtn" type="button">CREATE ACCOUNT</button>
+    <button class="link" id="forgotBtn" type="button">FORGOT PASSWORD?</button>
+  </section>
+
+  <section id="resetPanel" class="hidden">
+    <p class="hint">Enter your registered email. We'll send a secure password-reset link.</p>
+    <label for="resetEmail">Registered email</label>
+    <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email">
+    <button id="sendResetBtn" type="button">SEND RESET EMAIL</button>
+    <button class="alt" id="backBtn" type="button">BACK TO LOGIN</button>
+  </section>
+
+  <section id="newPasswordPanel" class="hidden">
+    <p class="hint">Choose a new password with at least 8 characters.</p>
+    <label for="newPassword">New password</label>
+    <input type="password" id="newPassword" autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+    <label for="confirmPassword">Confirm new password</label>
+    <input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" placeholder="Repeat new password">
+    <button id="savePasswordBtn" type="button">UPDATE PASSWORD</button>
+  </section>
+
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Pinned version; creates window.supabase (library). js/supabase-client.js then replaces it with your client. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+const GAME_PAGE = 'game.html';
+const $ = id => document.getElementById(id);
+const msg = $('msg'), email = $('email'), password = $('password');
+const panels = { login: $('loginPanel'), reset: $('resetPanel'), newPassword: $('newPasswordPanel') };
+const subtitles = { login: 'Sign in to play', reset: 'Recover your account', newPassword: 'Set a new password' };
+
+// Decide BEFORE anything else whether we arrived from a password-recovery link,
+// so the existing-session check can't redirect to the game first.
+let recoveryMode = /type=recovery/.test(location.hash) || /type=recovery/.test(location.search);
+
+function show(t, ok = false) { msg.textContent = t; msg.className = 'msg ' + (ok ? 'ok' : 'err'); }
+function clearMessage() { msg.textContent = ''; msg.className = 'msg'; }
+function getClient() {
+  if (typeof supabase === 'undefined' || !supabase || !supabase.auth) {
+    show('Supabase client did not load. Check js/supabase-client.js and its project URL/key.');
+    return null;
+  }
+  return supabase;
+}
+function cleanEmail(v) { return String(v || '').trim().replace(/[\u200B-\u200D\uFEFF]/g, ''); }
+function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function setPanel(p) {
+  for (const k in panels) panels[k].classList.toggle('hidden', k !== p);
+  $('subtitle').textContent = subtitles[p];
+  clearMessage();
+}
+// Redirect target for emails: the clean page URL, without any old hash/query.
+const pageUrl = location.origin + location.pathname;
+
+async function checkExistingSession() {
+  const c = getClient(); if (!c) return;
+  try {
+    const { data, error } = await c.auth.getSession();
+    if (error) throw error;
+    if (data.session && !recoveryMode) location.href = GAME_PAGE;
+  } catch (e) { show('Could not check session: ' + (e.message || e)); }
+}
+
+$('loginBtn').onclick = async () => {
+  clearMessage();
+  const c = getClient(); if (!c) return;
+  const e = cleanEmail(email.value);
+  if (!validEmail(e)) return show('Please enter a valid email address, such as you@example.com.');
+  if (!password.value) return show('Please enter your password.');
+  const b = $('loginBtn'); b.disabled = true;
+  try {
+    const { error } = await c.auth.signInWithPassword({ email: e, password: password.value });
+    if (error) throw error;
+    show('Logged in successfully.', true);
+    location.href = GAME_PAGE;
+  } catch (x) {
+    show(x.message || 'Login failed. Check your email and password.');
+    b.disabled = false;
+  }
+};
+
+$('signupBtn').onclick = async () => {
+  clearMessage();
+  const c = getClient(); if (!c) return;
+  const e = cleanEmail(email.value);
+  if (!validEmail(e)) return show('Please enter a valid email address.');
+  if (password.value.length < 8) return show('Password must contain at least 8 characters.');
+  const b = $('signupBtn'); b.disabled = true;
+  try {
+    const { data, error } = await c.auth.signUp({ email: e, password: password.value, options: { emailRedirectTo: pageUrl } });
+    if (error) throw error;
+    // Supabase returns a user with no identities when the email is already registered.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return show('This email is already registered. Try logging in or use "Forgot password".');
+    }
+    if (data.session) { show('Account created and signed in.', true); location.href = GAME_PAGE; }
+    else show('Registration submitted. Check your email to confirm your account.', true);
+  } catch (x) { show(x.message || 'Could not create account.'); }
+  finally { b.disabled = false; }
+};
+
+$('forgotBtn').onclick = () => { $('resetEmail').value = cleanEmail(email.value); setPanel('reset'); };
+$('backBtn').onclick = () => setPanel('login');
+
+$('sendResetBtn').onclick = async () => {
+  clearMessage();
+  const c = getClient(); if (!c) return;
+  const e = cleanEmail($('resetEmail').value);
+  if (!validEmail(e)) return show('Enter a valid registered email address. Check for spaces or missing characters.');
+  const b = $('sendResetBtn'); b.disabled = true;
+  try {
+    const { error } = await c.auth.resetPasswordForEmail(e, { redirectTo: pageUrl });
+    if (error) throw error;
+    show('If this email belongs to an account, a reset link will be sent. Check your inbox and spam folder.', true);
+  } catch (x) {
+    const d = x.message || String(x);
+    show(d + (d.toLowerCase().includes('invalid format') ? ' Please type the email manually without spaces.' : ''));
+  } finally { b.disabled = false; }
+};
+
+$('savePasswordBtn').onclick = async () => {
+  clearMessage();
+  const c = getClient(); if (!c) return;
+  const a = $('newPassword').value, bp = $('confirmPassword').value;
+  if (a.length < 8) return show('New password must contain at least 8 characters.');
+  if (a !== bp) return show('The passwords do not match.');
+  const b = $('savePasswordBtn'); b.disabled = true;
+  try {
+    const { error } = await c.auth.updateUser({ password: a });
+    if (error) throw error;
+    recoveryMode = false;
+    await c.auth.signOut();
+    history.replaceState(null, '', pageUrl); // drop the recovery tokens from the URL
+    setPanel('login');
+    show('Password updated successfully. Sign in with your new password.', true);
+  } catch (x) {
+    show((x.message || 'Could not update password.') + ' If the link expired, request a new reset email.');
+  } finally { b.disabled = false; }
+};
+
+// Press Enter to submit
+password.addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+email.addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+$('resetEmail').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendResetBtn').click(); });
+$('confirmPassword').addEventListener('keydown', e => { if (e.key === 'Enter') $('savePasswordBtn').click(); });
+
+const client = getClient();
+if (client) {
+  client.auth.onAuthStateChange(event => {
+    if (event === 'PASSWORD_RECOVERY') {
+      recoveryMode = true;
+      setPanel('newPassword');
+      show('Recovery link verified. Enter your new password.', true);
+    }
+  });
+  if (location.hash.includes('error=')) {
+    const p = new URLSearchParams(location.hash.slice(1));
+    recoveryMode = false;
+    show('Link error: ' + (p.get('error_description') || p.get('error') || 'The link may have expired.'));
+  }
+  checkExistingSession();
+}
+</script>
+</body>
+</html>
