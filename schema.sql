@@ -80,7 +80,7 @@ declare
   results jsonb := '[]'::jsonb;
 begin
   if uid is null then raise exception 'Not signed in'; end if;
-  if jsonb_typeof(p_bets) <> 'array' or jsonb_array_length(p_bets) not between 1 and 20 then
+  if jsonb_typeof(p_bets) <> 'array' or jsonb_array_length(p_bets) not between 1 and 100 then
     raise exception 'Invalid bets';
   end if;
 
