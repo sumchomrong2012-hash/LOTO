@@ -152,3 +152,8 @@ grant execute on function public.play_round(jsonb), public.admin_adjust_balance(
 
 -- AFTER you sign up on the site with your own email, run this ONCE to make yourself admin:
 -- update public.profiles set role = 'admin' where email = 'YOUR-EMAIL@example.com';
+
+-- Repair: create profiles for accounts that were registered BEFORE this script was run
+insert into public.profiles (id, email)
+  select id, email from auth.users
+  on conflict (id) do nothing;
